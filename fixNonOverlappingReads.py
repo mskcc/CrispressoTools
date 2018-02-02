@@ -19,7 +19,7 @@ warn    = logging.warning
 debug   = logging.debug
 info    = logging.info
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 nt_complement=dict({'A':'T','C':'G','G':'C','T':'A','N':'N','_':'_','-':'-'})
 
@@ -100,21 +100,23 @@ def main():
                 meanQ=int(numpy.mean(qVals))
                 extendQ=chr(meanQ+33)*padLen
                 origQ="".join([chr(x+33) for x in r1.letter_annotations["phred_quality"]])
+                extendedRead1= str(r1.seq)+args.amplicon_seq[(pos+args.tag_len):(pos+padLen+args.tag_len)]
 
                 print >>fpR1, r1.description
-                print >>fpR1, str(r1.seq)+args.amplicon_seq[(pos+args.tag_len):(pos+padLen+args.tag_len)]
+                print >>fpR1, extendedRead1
                 print >>fpR1, "+"
-                print >>fpR1, origQ+extendQ
+                print >>fpR1, (origQ+extendQ)[:len(extendedRead1)]
 
                 qVals=[x for x in tagR2.letter_annotations["phred_quality"]]
                 meanQ=int(numpy.mean(qVals))
                 extendQ=chr(meanQ+33)*padLen
                 origQ="".join([chr(x+33) for x in r2.letter_annotations["phred_quality"]])
+                extendedRead2= str(r2.seq)+revComp_amplicon[(pos+args.tag_len):(pos+padLen+args.tag_len)]
 
                 print >>fpR2, r2.description
-                print >>fpR2, str(r2.seq)+revComp_amplicon[(pos+args.tag_len):(pos+padLen+args.tag_len)]
+                print >>fpR2, extendedRead2
                 print >>fpR2, "+"
-                print >>fpR2, origQ+extendQ
+                print >>fpR2, (origQ+extendQ)[:len(extendedRead2)]
 
 
             # if i>NUM_SEQS_TO_SCAN:
