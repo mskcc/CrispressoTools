@@ -19,22 +19,22 @@ warn    = logging.warning
 debug   = logging.debug
 info    = logging.info
 
-__version__ = "0.9.1"
+__version__ = "1.0.1"
 
 """
-Description: To extend the sequencing reads for CRISPResso and other analysis softwares. Sequencing Read1 and Read2 
-             are extended to provide a maximum overlap between Read1 and Read2 is 10bp. This is important because 
+Description: To extend the sequencing reads for CRISPResso and other analysis softwares. Sequencing Read1 and Read2
+             are extended to provide a maximum overlap between Read1 and Read2 is 10bp. This is important because
              CRISPResso software penalize Reads that overlaps more than certain number of basepairs.
 			 The script looks for 10bp Tag sequence at the end of the reads and finds it on the reference sequence.
 			 If the tag is not found next 10bp are considered as TAG sequence. If a match is found, the location of
 			 the tag sequence on read1 and on reference sequence are then used to extend the sequencing reads with
-			 the reference sequence provided for CRISPR projects.   
+			 the reference sequence provided for CRISPR projects.
 """
 
 nt_complement=dict({'A':'T','C':'G','G':'C','T':'A','N':'N','_':'_','-':'-'})
 
 
-# Reverse compliment the reference sequence 
+# Reverse compliment the reference sequence
 def reverse_complement(seq):
 
         return "".join([nt_complement[c] for c in seq.upper()[-1::-1]])
@@ -61,7 +61,7 @@ def readFASTQ(fastq_filename):
         yield record
 
 """ Sequencing reads for Read1 and Read2 are mix of forward and reverse seqences.
-    This method is to find read1 tag_sequence on forward read and read2 tag sequence 
+    This method is to find read1 tag_sequence on forward read and read2 tag sequence
     on reverse compliment of reference sequence."""
 def find_tag_on_reference(tag_len, read1, read2, ref_sequence, reverse_complement):
     foundR1tag=False
@@ -71,7 +71,7 @@ def find_tag_on_reference(tag_len, read1, read2, ref_sequence, reverse_complemen
 
     end_R1tag = tag_len
     end_R2tag = tag_len
-    
+
     start_R1tag=0
     start_R2tag=0
 
@@ -88,7 +88,7 @@ def find_tag_on_reference(tag_len, read1, read2, ref_sequence, reverse_complemen
         results.append(pos)
         results.append(tagR1_sequence)
         results.append(end_R1tag)
- 	
+
  	# if position of tagR2 is found add it to results along with its sequence and distance form the end of the read.
     if pos2>-1:
         foundR2tag=True
@@ -100,7 +100,7 @@ def find_tag_on_reference(tag_len, read1, read2, ref_sequence, reverse_complemen
     if not foundR1tag and not pos>-1:
         i = 1
         max_iterations = len(read1)%tag_len
-        
+
         while i<=max_iterations and not foundR1tag:
             i +=1
             end_R1tag+=tag_len
@@ -119,7 +119,7 @@ def find_tag_on_reference(tag_len, read1, read2, ref_sequence, reverse_complemen
         j = 1
         max_iterations = len(read2)%tag_len
 
-        while j<=max_iterations and not foundR2tag: 
+        while j<=max_iterations and not foundR2tag:
             j +=1
             end_R2tag+=tag_len
             start_R2tag+=tag_len
@@ -156,7 +156,7 @@ def find_tag_on_revCompliment(tag_len, read1, read2, ref_sequence, reverse_compl
 
     end_R1tag = tag_len
     end_R2tag = tag_len
-    
+
     start_R1tag=0
     start_R2tag=0
 
@@ -169,7 +169,7 @@ def find_tag_on_revCompliment(tag_len, read1, read2, ref_sequence, reverse_compl
 
     # if position of tagR1 is found add it to results along with its sequence and distance form the end of the read.
     if posReverseComp>-1:
-        
+
         foundR1tag=True
         results.append(posReverseComp)
         results.append(tagR1_sequence)
@@ -229,12 +229,12 @@ def find_tag_on_revCompliment(tag_len, read1, read2, ref_sequence, reverse_compl
         results.append(pos2ReverseComp)
         results.append(tagR2_sequence)
         results.append(end_R2tag)
-        
-  
+
+
     return results # an array with all the needed values is returned.
 
 def main():
-    
+
         print 'Version %s\n' % __version__
 
         parser = argparse.ArgumentParser(
@@ -284,28 +284,28 @@ def main():
         pos=-1
         pos2=-1
         posReverseStrand=-1
-        pos2ReverseStrand=-1        
-        
+        pos2ReverseStrand=-1
+
         for i,rr in enumerate(zip(readFASTQ(args.fastq_r1),readFASTQ(args.fastq_r2))):
             r1,r2=rr
 
             total_reads_processed +=2 #Count number of  all the reads that were processed
 
             tag_forward_reads = find_tag_on_reference(args.tag_len, r1, r2, args.amplicon_seq, revComp_amplicon)
-            
+
             tagR1_forward = tag_forward_reads[1]
             tagR2_forward = tag_forward_reads[4]
             tagR1_forward_distance = tag_forward_reads[2]
             tagR2_forward_distance = tag_forward_reads[5]
             pos=tag_forward_reads[0]
             pos2=tag_forward_reads[3]
-            
+
             # search for read1 tag on reverse compliment only if the position on forward strand is not foune.
-            # It is possible that the read1 is on reverse compliment of reference sequence. 
+            # It is possible that the read1 is on reverse compliment of reference sequence.
             if not pos>-1 and not pos2>-1:
 
                 tag_reverse_reads = find_tag_on_revCompliment(args.tag_len, r1, r2, args.amplicon_seq, revComp_amplicon)
-           
+
                 tagR1_rev = tag_reverse_reads[1]
                 tagR2_rev = tag_reverse_reads[4]
                 tagR1_rev_distance = tag_reverse_reads[2]
@@ -343,10 +343,10 @@ def main():
                 print >>fpR2, (origQ+extendQ)[:len(extendedRead2)]
 
                 total_reads_padded+=2  # count number of padded reads
-                
+
             # if both tags are found then add then extend the reads and add extended reads to new fastq file.
             elif  posReverseStrand>-1 and pos2ReverseStrand>-1:
-               
+
                 qVals=[x for x in tagR1_rev.letter_annotations["phred_quality"]]
                 meanQ=int(numpy.mean(qVals))
                 extendQ=chr(meanQ+33)*padLen
@@ -364,19 +364,19 @@ def main():
                 origQ="".join([chr(x+33) for x in r2.letter_annotations["phred_quality"]])
                 extendedRead2=str(r2.seq)+args.amplicon_seq[(pos2ReverseStrand+tagR2_rev_distance):(pos2ReverseStrand+padLen+tagR2_rev_distance)]
 
-                print >>fpR2, r2.description 
+                print >>fpR2, r2.description
                 print >>fpR2, extendedRead2
                 print >>fpR2, "+"
                 print >>fpR2, (origQ+extendQ)[:len(extendedRead2)]
                 total_reads_padded+=2 # count number of padded reads
 
             # if either of the tags are not found then add the reads to new fastq file that collects unpadded reads.
-            else:    
+            else:
                 print >>notpaddedR1, r1.description
                 print >>notpaddedR1, r1.seq
                 print >>notpaddedR1, "+"
                 print >>notpaddedR1, "".join([chr(x+33) for x in r1.letter_annotations["phred_quality"]])
-                
+
                 print >>notpaddedR2, r2.description
                 print >>notpaddedR2, r2.seq
                 print >>notpaddedR2, "+"
@@ -385,7 +385,7 @@ def main():
                 notFoundCount+=2 # count number of unpadded reads
 
         # print counts to the screen for testing purposes. But this statistics should be captured for testing purposes.
-        print "Total reads processed, " + str(total_reads_processed) 
+        print "Total reads processed, " + str(total_reads_processed)
         print "Total reads padded, " + str(total_reads_padded)
         print "Total reads eliminated in this process, " + str(notFoundCount)
 
